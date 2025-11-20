@@ -1,33 +1,37 @@
+export const deliveryManModel = {
+  totalRecordCount: 10,
+  deliveryManId: 0,
+  companyId: 0,
+  shopId: 0,
+  name: "",
+  mobile: "",
+  description: "",
+  readOnly: 0,
+  sortOrder: 0,
+};
+
 export const gridSearchModel = {
   startIndex: 0,
   endIndex: 10,
- //companyId: 1,
   shopId: 1,
-  firstName: "",
-  lastName: "",
-  mobile1: "",
-  mobile2: "",
+  name: "",
+  mobile: "",
   description: "",
 };
 
 export const gridModel = [
- //{ name: "deliveryManId", columnType: "number", csvHeader: "ID" },
-  { name: "firstName", columnType: "string", csvHeader: "First Name" },
- { name: "lastName", columnType: "string", csvHeader: "Last Name" },
- { name: "mobile1", columnType: "string", csvHeader: "Mobile 1" },
-  { name: "mobile2", columnType: "string", csvHeader: "Mobile 2" },
+  { name: "name", columnType: "string", csvHeader: "Name" },
+  { name: "mobile", columnType: "string", csvHeader: "Mobile" },
   { name: "description", columnType: "string", csvHeader: "Description" },
+  { name: "store", columnType: "string", csvHeader: "Store" },
 ];
 
 export const headers = [
-  //{ name: "deliveryManId", columnType: "number" },
-  { name: "firstName", columnType: "string" },
-  { name: "lastName", columnType: "string" },
-  { name: "mobile1", columnType: "string" },
-  { name: "mobile2", columnType: "string" },
-  { name: "description", columnType: "string" }
+  { name: "name", columnType: "string" },
+  { name: "mobile", columnType: "string" },
+  { name: "description", columnType: "string" },
+  { name: "store", columnType: "string" },
 ];
-
 
 export const articleModel = [
   {
@@ -35,17 +39,3 @@ export const articleModel = [
     articleText: "Defining Delivery Man",
   },
 ];
-
-export const deliveryManModel = {
-  totalRecordCount: 10,
-  deliveryManId: 0,
-  companyId: 0,
-  shopId: 0,
-  firstName: "",
-  lastName: "",
-  mobile1: "",
-  mobile2: "",
-  description: "",
-  readOnly: 0,
-  sortOrder: 0,
-};
