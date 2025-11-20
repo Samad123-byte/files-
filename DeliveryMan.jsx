@@ -6,7 +6,7 @@ import { useNavigate } from "react-router-dom";
 import DeliveryManDefinition from "../Component/Screens/DeliveryMan/DeliveryManDefinition";
 import { addBreadCrumbName } from "../store/slices/breadCrumbSlice";
 import { gridSearchModel, gridModel, headers, articleModel } from "../Models/DeliveryManModel";
-import "../styles/DeliveryMan/DeliveryMan.css"
+
 export default function DeliveryMan() {
   const apiUrl = import.meta.env.VITE_BACKEND_API_URL;
   const dispatch = useDispatch();
@@ -83,23 +83,39 @@ const fetchDeliveryMan = () => {
     data: searchPayload,
   })
     .then((res) => {
-             if (res.data.success) {
-               if (res.data.data.length > 0) {
-                 setRecords(res.data.data);
-                 setTotalRecords(res.data.data[0].countRow);
-               } else {
-                 setRecords([]);
-                 setTotalRecords(0);  
-               }  
-             } else  {
-               toast.error(res.error);
-             } 
+      if (res.data.success) {
+        if (res.data.data.length > 0) {
+          // Map API response to UI format
+      const mappedRecords = res.data.data.map((item) => ({
+  deliveryManId: item.deliveryManId,
+  companyId: item.companyId,
+  firstName: item.firstName,   // backend field
+  mobile1: item.mobile1,       // backend field
+  name: item.firstName,        // frontend display
+  mobile: item.mobile1,        // frontend display
+  description: item.description,
+  store: `Store ${item.shopId}`, // dropdown label
+  storeId: item.shopId,         // dropdown value
+  shopId: item.shopId,          // backend field
+  totalRecordCount: item.countRow,
+}));
+
+          setRecords(mappedRecords);
+          setTotalRecords(mappedRecords[0].totalRecordCount || 0);
+        } else {
+          setRecords([]);
+          setTotalRecords(0);
+        }
+      } else {
+        toast.error(res.data.error || "Failed to fetch delivery man records");
+      }
     })
     .catch((ex) => {
       console.error("API Error:", ex);
       toast.error("Something went wrong while fetching records");
     });
 };
+
 
 
 
