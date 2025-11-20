@@ -21,80 +21,61 @@ export default function DeliveryManDefinition({
   setIsRecordTab,
   userRights,
 }) {
-  const [firstName, setFirstName] = useState("");
-  const [lastName, setLastName] = useState("");
-  const [mobile1, setMobile1] = useState("");
-  const [mobile2, setMobile2] = useState("");
+  const [name, setName] = useState("");
+  const [mobile, setMobile] = useState("");
   const [description, setDescription] = useState("");
+  const [store, setStore] = useState(null);
   const [showModal, setShowModal] = useState(false);
   const [modalBody, setModalBody] = useState("");
   const [modalTitle, setModalTitle] = useState("");
   const [actionState, setActionState] = useState("");
-  const [store, setStore] = useState(null);
 
+  const nameRef = useRef(null);
 
-  const firstNameRef = useRef(null);
-
-  // Focus first input always
   const focusFirstInput = () => {
-    firstNameRef.current?.focus();
+    nameRef.current?.focus();
   };
 
-  // Reset / New mode load
   useEffect(() => {
     if (mode === "new") {
-      setFirstName("");
-      setLastName("");
-      setMobile1("");
-      setMobile2("");
+      setName("");
+      setMobile("");
       setDescription("");
+      setStore(null);
     }
     focusFirstInput();
   }, [mode]);
 
-  // Update mode load
   useEffect(() => {
     if (mode === "update" && selectedRecord) {
-      setFirstName(selectedRecord.firstName || "");
-      setLastName(selectedRecord.lastName || "");
-      setMobile1(selectedRecord.mobile1 || "");
-      setMobile2(selectedRecord.mobile2 || "");
+      setName(selectedRecord.firstName || "");
+      setMobile(selectedRecord.mobile1 || "");
       setDescription(selectedRecord.description || "");
-      
-            if (selectedRecord.shopId) {
-      setStore({
-        value: parseInt(selectedRecord.shopId),
-        label: selectedRecord.shopName || `Store ${selectedRecord.shopId}`,
-      });
-    } else {
-      setStore(null);
-    }
+      setStore(
+        selectedRecord.shopId && selectedRecord.shopId !== "0"
+          ? { value: selectedRecord.shopId, label: `Store ${selectedRecord.shopId}` }
+          : null
+      );
     }
   }, [mode, selectedRecord]);
 
-  // Validation
   const validate = () => {
-    if (!firstName || firstName.trim() === "") {
-      toast.error("First Name is required");
+    if (!name.trim()) {
+      toast.error("Name is required");
       focusFirstInput();
       return false;
     }
-
-    if (!mobile1 || mobile1.trim() === "") {
+    if (!mobile.trim()) {
       toast.error("Mobile No is required");
       return false;
     }
-
-    const onlyNumbers = /^[0-9]+$/;
-    if (!onlyNumbers.test(mobile1.trim())) {
+    if (!/^[0-9]+$/.test(mobile.trim())) {
       toast.error("Mobile No must contain only numbers");
       return false;
     }
-
     return true;
   };
 
-  // Button Actions
   const handleSave = () => {
     if (!validate()) return;
     setModalBody("Do you want to Save this record?");
@@ -120,52 +101,51 @@ export default function DeliveryManDefinition({
 
   const handleReset = () => {
     if (mode === "new") {
-      setFirstName("");
-      setLastName("");
-      setMobile1("");
-      setMobile2("");
+      setName("");
+      setMobile("");
       setDescription("");
-    } else {
-      setFirstName(selectedRecord.firstName);
-      setLastName(selectedRecord.lastName);
-      setMobile1(selectedRecord.mobile1);
-      setMobile2(selectedRecord.mobile2);
-      setDescription(selectedRecord.description);
+      setStore(null);
+    } else if (selectedRecord) {
+      setName(selectedRecord.firstName || selectedRecord.name || "");
+      setMobile(selectedRecord.mobile1 || selectedRecord.mobile || "");
+      setDescription(selectedRecord.description || "");
+      setStore(
+        selectedRecord.shopId
+          ? { value: selectedRecord.shopId, label: `Store ${selectedRecord.shopId}` }
+          : null
+      );
     }
   };
 
-  // Confirm Handler
   const onConfirm = () => {
     if (actionState === "Save") addRecord();
     else if (actionState === "Update") updateRecord();
     else if (actionState === "Delete") deleteRecord();
   };
 
-  // API functions
   const addRecord = () => {
-    deliveryManModel.firstName = firstName.trim();
-    deliveryManModel.lastName = lastName.trim();
-    deliveryManModel.mobile1 = mobile1.trim();
-    deliveryManModel.mobile2 = mobile2.trim();
-    deliveryManModel.description = description.trim();
-    deliveryManModel.shopId = store?.value || 0;
-
+    const payload = {
+      ...deliveryManModel,
+      firstName: name.trim(),
+      mobile1: mobile.trim(),
+      description: description.trim(),
+      shopId: store?.value || 0,
+    };
 
     apiService({
       endpoint: apiUrl + "/DeliveryMan/add",
       method: "POST",
-      data: deliveryManModel,
+      data: payload,
     })
       .then((res) => {
         if (res.data.success) {
           const newRecord = {
             deliveryManId: res.data.data.deliveryManId,
-            companyId: deliveryManModel.companyId || 0,
-            shopId: deliveryManModel.shopId || 0,
-            firstName: firstName.trim(),
-            lastName: lastName.trim(),
-            mobile1: mobile1.trim(),
-            mobile2: mobile2.trim(),
+            companyId: payload.companyId || 0,
+            store: store?.label || "",
+            storeId: store?.value || 0,
+            name: name.trim(),
+            mobile: mobile.trim(),
             description: description.trim(),
             readOnly: 0,
             sortOrder: 0,
@@ -183,29 +163,41 @@ export default function DeliveryManDefinition({
   };
 
   const updateRecord = () => {
-    const updated = {
-      ...selectedRecord,
-      firstName: firstName.trim(),
-      lastName: lastName.trim(),
-      mobile1: mobile1.trim(),
-      mobile2: mobile2.trim(),
+    const payload = {
+      deliveryManId: selectedRecord.deliveryManId,
+      firstName: name.trim(),
+      mobile1: mobile.trim(),
       description: description.trim(),
-        shopId: store?.value || 0,
+      shopId: store?.value || 0,
     };
 
     apiService({
       endpoint: apiUrl + "/DeliveryMan/update",
       method: "POST",
-      data: updated,
+      data: payload,
     })
       .then((res) => {
         if (res.data.success) {
+          const updatedRecord = {
+            ...selectedRecord,
+            firstName: name.trim(),
+            lastName: selectedRecord.lastName || "",
+            name: name.trim() + (selectedRecord.lastName ? ` ${selectedRecord.lastName}` : ""),
+            mobile1: mobile.trim(),
+            mobile: mobile.trim(),
+            description: description.trim(),
+            shopId: store?.value || selectedRecord.shopId || 0,
+            store: store?.label || (selectedRecord.shopId ? `Store ${selectedRecord.shopId}` : ""),
+          };
+
           setRecords((prev) =>
-            prev.map((p) =>
-              p.deliveryManId === updated.deliveryManId ? updated : p
+            prev.map((r) =>
+              Number(r.deliveryManId) === Number(updatedRecord.deliveryManId)
+                ? updatedRecord
+                : r
             )
           );
-          setSelectedRecord(updated);
+          setSelectedRecord(updatedRecord);
           toast.success("Record updated successfully");
         } else {
           toast.error(res.data.error);
@@ -216,7 +208,6 @@ export default function DeliveryManDefinition({
 
   const deleteRecord = () => {
     const payload = { deliveryManId: selectedRecord.deliveryManId };
-
     apiService({
       endpoint: apiUrl + "/DeliveryMan/delete",
       method: "POST",
@@ -238,84 +229,77 @@ export default function DeliveryManDefinition({
   };
 
   return (
-    <>
+<>
+  {/* First Row */}
+  <div className="cityNameContainer">
 
-<DropDown
-  label="Store"
-  placeholder="--Select Store--"
-  options={"shops"}
-  selectedOption={store}
-  setSelectedOption={setStore} // just pass the object
-/>
+    {/* Store */}
+    <div className="storeContainer">
+      <DropDown
+        label="Store"
+        placeholder="--Select Store--"
+        options={"shops"}
+        selectedOption={store}
+        setSelectedOption={setStore}
+      />
+    </div>
 
-
-
-      <div className="cityNameContainer">
-        <Input
-          label="First Name"
-          important="true"
-          inputVal={firstName}
-          setInputVal={setFirstName}
-          inputRef={firstNameRef}
-          maxLength={50}
-        />
-      </div>
-
-      <div className="cityNameContainer">
-        <Input
-          label="Last Name"
-          inputVal={lastName}
-          setInputVal={setLastName}
-          maxLength={50}
-        />
-      </div>
-
+    {/* Name */}
+    <div className="nameContainer">
       <Input
-        label="Mobile 1"
-        inputVal={mobile1}
+        label="Name"
+        important="true"
+        inputVal={name}
+        setInputVal={setName}
+        inputRef={nameRef}
+        maxLength={50}
+      />
+    </div>
+
+    {/* Mobile */}
+    <div className="mobileContainer">
+      <Input
+        label="Mobile No"
+        inputVal={mobile}
         setInputVal={(v) => {
-          if (/^[0-9]*$/.test(v)) setMobile1(v);
+          if (/^[0-9]*$/.test(v)) setMobile(v);
         }}
         maxLength={20}
       />
+    </div>
 
-      <Input
-        label="Mobile 2"
-        inputVal={mobile2}
-        setInputVal={(v) => {
-          if (/^[0-9]*$/.test(v)) setMobile2(v);
-        }}
-        maxLength={20}
-      />
+  </div>
 
-      <div className="cityCommentContainer">
-        <InputComment
-          label="Description"
-          inputVal={description}
-          setInputVal={setDescription}
-        />
-      </div>
+  {/* Description */}
+  <div className="cityCommentContainer">
+    <InputComment
+      label="Description"
+      inputVal={description}
+      setInputVal={setDescription}
+    />
+  </div>
 
-      <SaveUpdateBtn
-        handleSave={handleSave}
-        handleReset={handleReset}
-        handleDelete={handleDelete}
-        handleUpdate={handleUpdate}
-        showUnderLine={true}
-        mode={mode}
-        disableSave={userRights !== 1 && !userRights.includes("Save")}
-        disableUpdate={userRights !== 1 && !userRights.includes("Update")}
-        disableDelete={userRights !== 1 && !userRights.includes("Delete")}
-      />
+  {/* Buttons */}
+  <SaveUpdateBtn
+    handleSave={handleSave}
+    handleReset={handleReset}
+    handleDelete={handleDelete}
+    handleUpdate={handleUpdate}
+    showUnderLine={true}
+    mode={mode}
+    disableSave={userRights !== 1 && !userRights.includes("Save")}
+    disableUpdate={userRights !== 1 && !userRights.includes("Update")}
+    disableDelete={userRights !== 1 && !userRights.includes("Delete")}
+  />
 
-      {showModal && (
-        <ConfirmationPopup
-          setShowModal={setShowModal}
-          modalTitle={modalTitle}
-          modalBody={modalBody}
-          onConfirm={onConfirm}
-        />
-      )}
-    </>
+  {showModal && (
+    <ConfirmationPopup
+      setShowModal={setShowModal}
+      modalTitle={modalTitle}
+      modalBody={modalBody}
+      onConfirm={onConfirm}
+    />
+  )}
+</>
   );
 }
